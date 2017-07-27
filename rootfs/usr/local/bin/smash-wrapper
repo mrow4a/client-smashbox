@@ -8,15 +8,12 @@ declare -x SMASHBOX_USERNAME
 declare -x SMASHBOX_PASSWORD
 declare -x SMASHBOX_TIMEOUT
 declare -x SMASHBOX_WAIT
-declare -x SMASHBOX_TEST_SET
-declare -x SMASHBOX_TEST_NAME
 declare -x SMASHBOX_CHECK_URL
 declare -x SMASHBOX_CHECK_STATUS
 declare -x SMASHBOX_SSL_ENABLED
 
 [[ -z "${SMASHBOX_TIMEOUT}" ]] && SMASHBOX_TIMEOUT="3600"
 [[ -z "${SMASHBOX_WAIT}" ]] && SMASHBOX_WAIT="false"
-[[ -z "${SMASHBOX_TEST_SET}" ]] && SMASHBOX_TEST_SET="-a"
 [[ -z "${SMASHBOX_CHECK_URL}" ]] && SMASHBOX_CHECK_URL="${SMASHBOX_URL}"
 [[ -z "${SMASHBOX_CHECK_STATUS}" ]] && SMASHBOX_CHECK_STATUS="200"
 [[ -z "${SMASHBOX_SSL_ENABLED}" ]] && SMASHBOX_SSL_ENABLED="false"
@@ -46,26 +43,52 @@ then
   echo "done!"
 fi
 
-if [[ -n ${SMASHBOX_TEST_NAME} ]]
-then
-  if [[ ${SMASHBOX_TEST_NAME} == *"@"* ]]; then
-    SMASHBOX_TEST_SET="-t ${SMASHBOX_TEST_NAME##*@}"
-    SMASHBOX_TEST_NAME="$(cut -d '@' -f 1 <<< "${SMASHBOX_TEST_NAME}")"
-  fi
+# Define test set
+TEST_ARRAY=( \
+    reshareDir \
+    scrapeLogFile \
+    shareDir \
+    shareFile \
+    shareGroup \
+    sharePermissions \
+    uploadFiles \
+    basicSync \
+    concurrentDirRemove \
+    shareLink \
+    shareMountInit \
+    sharePropagationGroups \
+    sharePropagationInsideGroups \
+    chunking \
+    nplusone \
+)
 
-  FILES=(
-    lib/test_${SMASHBOX_TEST_NAME}.py
-    lib/oc-tests/test_${SMASHBOX_TEST_NAME}.py
-    lib/owncloud/test_${SMASHBOX_TEST_NAME}.py
-  )
+TEST_FOLDER=jenkins
 
-  for FILE in ${FILES[@]}
-  do
-    if [[ -f /smashbox/${FILE} ]]
+mkdir ${TEST_FOLDER}
+
+# Copy tests to TEST_FOLDER and execute all tests in that directory
+for SMASHBOX_TEST_NAME in "${TEST_ARRAY[@]}"
+do
+    if [[ -n ${SMASHBOX_TEST_NAME} ]]
     then
-      SMASHBOX_TEST_NAME=${FILE}
-    fi
-  done
-fi
+      if [[ ${SMASHBOX_TEST_NAME} == *"@"* ]]; then
+        SMASHBOX_TEST_NAME="$(cut -d '@' -f 1 <<< "${SMASHBOX_TEST_NAME}")"
+      fi
 
-exec /smashbox/bin/smash --debug ${SMASHBOX_TEST_SET} ${SMASHBOX_TEST_NAME} $*
+      FILES=(
+        lib/test_${SMASHBOX_TEST_NAME}.py
+        lib/oc-tests/test_${SMASHBOX_TEST_NAME}.py
+        lib/owncloud/test_${SMASHBOX_TEST_NAME}.py
+      )
+
+      for FILE in ${FILES[@]}
+      do
+        if [[ -f /smashbox/${FILE} ]]
+        then
+          SMASHBOX_TEST_NAME=${FILE}
+        fi
+      done
+    fi
+    cp ${SMASHBOX_TEST_NAME} ${TEST_FOLDER}/
+done
+exec /smashbox/bin/smash --debug -a ${TEST_FOLDER} $*

@@ -4,8 +4,8 @@
 
 ```bash
 docker run -ti \
-  --name smashbox-runner \
-  owncloud/smashbox-runner:latest
+  --name client-smashbox \
+  owncloud/client-smashbox:latest
 ```
 
 
@@ -14,7 +14,7 @@ docker run -ti \
 The available versions should be already pushed to the Docker Hub, but in case you want to try a change locally you can always execute the following command to get this image built locally:
 
 ```
-IMAGE_NAME=owncloud/smashbox-runner ./hooks/build
+IMAGE_NAME=owncloud/client-smashbox ./hooks/build
 ```
 
 ## Available environment variables
@@ -51,5 +51,5 @@ MIT
 ## Copyright
 
 ```
-Copyright (c) 2017 Thomas Boerger <tboerger@owncloud.com>
+Copyright (c) 2017 Piotr Mrowczynski <piotr@owncloud.com>
 ```
